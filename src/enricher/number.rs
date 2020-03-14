@@ -84,7 +84,7 @@ mod test {
     #[test]
     fn test_unsigned_number() {
         let mut service: Service = Service::new(Algorithm::Russian);
-        service.add_enricher(Box::new(NumberEnricher()));
+        service.add_enricher(NumberEnricher());
         let sentence = service.sentence("У меня 120 печеник".to_owned()).unwrap();
         let numbers = NumberEnricher::extract(&sentence);
         assert_eq!(numbers, vec![(Loc::new(2, 1), Number::Unsigned(120))]);
@@ -93,7 +93,7 @@ mod test {
     #[test]
     fn test_signed_number() {
         let mut service: Service = Service::new(Algorithm::Russian);
-        service.add_enricher(Box::new(NumberEnricher()));
+        service.add_enricher(NumberEnricher());
         let sentence = service.sentence("У меня -120 печеник".to_owned()).unwrap();
         let numbers = NumberEnricher::extract(&sentence);
         assert_eq!(numbers, vec![(Loc::new(2, 2), Number::Signed(-120))]);
@@ -102,7 +102,7 @@ mod test {
     #[test]
     fn test_number() {
         let mut service: Service = Service::new(Algorithm::Russian);
-        service.add_enricher(Box::new(NumberEnricher()));
+        service.add_enricher(NumberEnricher());
         let sentence = service
             .sentence("У меня 120 печеник и 30 котов. И - 50 и -90. 140% 40 % 70".to_owned())
             .unwrap();

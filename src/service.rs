@@ -17,9 +17,9 @@ impl Service {
         }
     }
 
-    pub fn add_enricher(&mut self, enricher: Box<dyn Enricher>) {
+    pub fn add_enricher<E>(&mut self, enricher: E) where E: Enricher + 'static {
         if let Some(pipe) = Arc::get_mut(&mut self.pipeline) {
-            pipe.push(enricher);
+            pipe.push(Box::new(enricher));
         }
     }
 
@@ -34,7 +34,7 @@ impl Service {
         Ok(sentence)
     }
 
-    pub fn update_enricher(&self, sentence: Sentence) -> Result<(), Error> {
+    pub fn back_propagation(&self, sentence: Sentence) -> Result<(), Error> {
         for enricher in self.pipeline.as_ref() {
             enricher.update(&sentence)?;
         }
@@ -127,7 +127,7 @@ mod test {
 
     #[test]
     fn test_tokenization() {
-        let mut service: Service = Service::new(Algorithm::Russian);
+        let service: Service = Service::new(Algorithm::Russian);
         assert_eq!(
             service
                 .sentence("w1w-12wr$re;21-12feац-ц123".to_owned())

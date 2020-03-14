@@ -18,6 +18,14 @@ impl Sentence {
     pub fn tokens_mut(&mut self) -> &mut [Token] {
         self.tokens.as_mut_slice()
     }
+
+    pub fn by_loc(&self, loc: &Loc) -> String {
+        self.raw
+            .chars()
+            .skip(loc.start_index)
+            .take(loc.len)
+            .collect()
+    }
 }
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Debug)]

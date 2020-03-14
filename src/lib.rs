@@ -1,3 +1,4 @@
+mod dictionary;
 mod enricher;
 mod sentence;
 mod service;
