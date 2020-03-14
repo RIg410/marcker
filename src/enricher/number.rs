@@ -35,7 +35,7 @@ impl Enricher for NumberEnricher {
                 if let Ok(val) = u64::from_str(&token.val) {
                     if index > 0 {
                         let token = &sentence.tokens()[index - 1];
-                        if &token.val == "-" || &token.val == "минус" {
+                        if &token.val == "-" {
                             Some(Number::Signed((val as i64) * -1))
                         } else {
                             Some(Number::Unsigned(val))
@@ -103,16 +103,21 @@ mod test {
     fn test_number() {
         let mut service: Service = Service::new(Algorithm::Russian);
         service.add_enricher(Box::new(NumberEnricher()));
-        let sentence = service.sentence("У меня 120 печеник и 30 котов. И - 50 и -90. 140% 40 % 70".to_owned()).unwrap();
+        let sentence = service
+            .sentence("У меня 120 печеник и 30 котов. И - 50 и -90. 140% 40 % 70".to_owned())
+            .unwrap();
         let numbers = NumberEnricher::extract(&sentence);
-        assert_eq!(numbers, vec![
-            (Loc::new(2, 1), Number::Unsigned(120)),
-            (Loc::new(5, 1), Number::Unsigned(30)),
-            (Loc::new(9, 2), Number::Signed(-50)),
-            (Loc::new(12, 2), Number::Signed(-90)),
-            (Loc::new(15, 1), Number::Unsigned(140)),
-            (Loc::new(17, 1), Number::Unsigned(40)),
-            (Loc::new(19, 1), Number::Unsigned(70)),
-        ]);
+        assert_eq!(
+            numbers,
+            vec![
+                (Loc::new(2, 1), Number::Unsigned(120)),
+                (Loc::new(5, 1), Number::Unsigned(30)),
+                (Loc::new(9, 2), Number::Signed(-50)),
+                (Loc::new(12, 2), Number::Signed(-90)),
+                (Loc::new(15, 1), Number::Unsigned(140)),
+                (Loc::new(17, 1), Number::Unsigned(40)),
+                (Loc::new(19, 1), Number::Unsigned(70)),
+            ]
+        );
     }
 }

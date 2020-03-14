@@ -44,32 +44,41 @@ impl Service {
 
     fn tokenize(&self, msg: &str) -> Vec<Token> {
         let mut tokens = vec![];
-        let mut builder: Option<TokenBuilder> = None;
-        let number = None;
+        let mut builder: Option<(TokenBuilder, bool)> = None;
 
         for (index, symbol) in msg.to_lowercase().chars().enumerate() {
             if symbol.is_ascii_whitespace() {
                 if let Some(builder) = builder.take() {
-                    tokens.push(builder.done(&self.stemmer));
+                    tokens.push(builder.0.done(&self.stemmer));
                 }
             } else if symbol.is_ascii_punctuation() {
                 if let Some(builder) = builder.take() {
-                    tokens.push(builder.done(&self.stemmer));
+                    tokens.push(builder.0.done(&self.stemmer));
                 }
                 let mut builder = TokenBuilder::new(index);
                 builder.add_symbol(symbol);
                 tokens.push(builder.done(&self.stemmer));
             } else {
+                let is_numeric = symbol.is_numeric();
                 if builder.is_none() {
-                    builder = Some(TokenBuilder::new(index));
+                    builder = Some((TokenBuilder::new(index), is_numeric));
                 }
-                let builder = builder.as_mut().unwrap();
-                builder.add_symbol(symbol);
+
+                if builder.as_ref().unwrap().1 == is_numeric {
+                    let builder_val = builder.as_mut().unwrap();
+                    builder_val.0.add_symbol(symbol);
+                } else {
+                    let builder_val = builder.take().unwrap();
+                    tokens.push(builder_val.0.done(&self.stemmer));
+                    let mut builder_val = TokenBuilder::new(index);
+                    builder_val.add_symbol(symbol);
+                    builder = Some((builder_val, is_numeric));
+                }
             }
         }
 
         if let Some(builder) = builder.take() {
-            tokens.push(builder.done(&self.stemmer));
+            tokens.push(builder.0.done(&self.stemmer));
         }
 
         tokens
@@ -108,5 +117,40 @@ impl TokenBuilder {
             stemmer.stem(&self.token).to_string(),
             Loc::new(self.start_index, self.len),
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{Loc, Service, Token};
+    use rust_stemmers::Algorithm;
+
+    #[test]
+    fn test_tokenization() {
+        let mut service: Service = Service::new(Algorithm::Russian);
+        assert_eq!(
+            service
+                .sentence("w1w-12wr$re;21-12feац-ц123".to_owned())
+                .unwrap()
+                .tokens(),
+            [
+                Token::new("w".to_owned(), Loc::new(0, 1)),
+                Token::new("1".to_owned(), Loc::new(1, 1)),
+                Token::new("w".to_owned(), Loc::new(2, 1)),
+                Token::new("-".to_owned(), Loc::new(3, 1)),
+                Token::new("12".to_owned(), Loc::new(4, 2)),
+                Token::new("wr".to_owned(), Loc::new(6, 2)),
+                Token::new("$".to_owned(), Loc::new(8, 1)),
+                Token::new("re".to_owned(), Loc::new(9, 2)),
+                Token::new(";".to_owned(), Loc::new(11, 1)),
+                Token::new("21".to_owned(), Loc::new(12, 2)),
+                Token::new("-".to_owned(), Loc::new(14, 1)),
+                Token::new("12".to_owned(), Loc::new(15, 2)),
+                Token::new("feац".to_owned(), Loc::new(17, 4)),
+                Token::new("-".to_owned(), Loc::new(21, 1)),
+                Token::new("ц".to_owned(), Loc::new(22, 1)),
+                Token::new("123".to_owned(), Loc::new(23, 3)),
+            ]
+        );
     }
 }
